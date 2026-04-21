@@ -154,11 +154,7 @@ func runGet(cfg config, stdin io.Reader, stdout, stderr io.Writer) int {
 		return 1
 	}
 
-	exchanged, err := exchangeGitCredential(context.Background(), nil, cfg.exchangeURL, token, exchangeRequest{
-		Protocol:  request.Protocol,
-		Authority: request.Authority,
-		Path:      request.Path,
-	})
+	exchanged, err := exchangeGitCredential(context.Background(), nil, cfg.exchangeURL, token, exchangeRequest(request))
 	if err != nil {
 		writeStderr(stderr, "exchange Git credential: %v\n", err)
 		return 1
