@@ -45,9 +45,11 @@ Download a binary from the repository's GitHub Releases page.
 
 The helper is intended to be configured for one HTTPS authority at a time.
 
+`--exchange-url` and `--audience` are deployment-specific values. Replace the example values below with the token-exchange endpoint and Buildkite OIDC audience that your exchange service expects.
+
 ```sh
 git config credential."https://git.example.com".helper \
-  "/absolute/path/to/git-credential-buildkite-oidc --exchange-url=https://auth.example.com/api/git-credentials/exchange --audience=git-token-exchange --allowed-authority=git.example.com --username=buildkite-agent"
+  "/absolute/path/to/git-credential-buildkite-oidc --exchange-url=https://token-exchange.example.com/api/git-credentials/exchange --audience=https://token-exchange.example.com --allowed-authority=git.example.com --username=buildkite-agent"
 git config credential."https://git.example.com".useHttpPath true
 git config credential."https://git.example.com".interactive false
 ```
@@ -64,16 +66,20 @@ The helper only supports HTTPS credential requests in v1. SSH remotes, pathless 
 
 The plugin lives in [`plugin/`](plugin/) and can be used as a subdirectory plugin on Buildkite Agent `v3.108.0+`.
 
+Like the helper flags, `exchange-url` and `audience` must be set to the values for your own token-exchange deployment.
+
 ```yaml
 steps:
   - command: git remote -v
     plugins:
       - github.com/buildkite/git-credential-helper-buildkite-oidc/plugin#v0.0.1:
-          exchange-url: https://auth.example.com/api/git-credentials/exchange
-          audience: git-token-exchange
+          exchange-url: https://token-exchange.example.com/api/git-credentials/exchange
+          audience: https://token-exchange.example.com
           authority: git.example.com
           version: v0.0.1
 ```
+
+If you do not want deployment-specific values checked into a pipeline definition, keep the plugin configuration in a generated pipeline or another internal configuration layer and pass the final strings into the plugin there.
 
 The plugin:
 

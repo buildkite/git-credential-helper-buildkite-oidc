@@ -16,13 +16,15 @@ The plugin uses two non-vendored hooks:
 
 ## Example
 
+`exchange-url` and `audience` are intentionally deployment-specific. Replace the example values with the endpoint and Buildkite OIDC audience used by your own token-exchange service.
+
 ```yaml
 steps:
   - command: git remote -v
     plugins:
       - github.com/buildkite/git-credential-helper-buildkite-oidc/plugin#v0.0.1:
-          exchange-url: https://auth.example.com/api/git-credentials/exchange
-          audience: git-token-exchange
+          exchange-url: https://token-exchange.example.com/api/git-credentials/exchange
+          audience: https://token-exchange.example.com
           authority: git.example.com
           version: v0.0.1
 ```
