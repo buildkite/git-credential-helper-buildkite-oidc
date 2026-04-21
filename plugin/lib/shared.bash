@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 
-readonly BK_PLUGIN_PREFIX="BUILDKITE_PLUGIN_GIT_CREDENTIAL_BUILDKITE_OIDC"
+if [[ -n "${BUILDKITE_PLUGIN_NAME:-}" ]]; then
+  readonly BK_PLUGIN_PREFIX="BUILDKITE_PLUGIN_${BUILDKITE_PLUGIN_NAME}"
+else
+  readonly BK_PLUGIN_PREFIX="BUILDKITE_PLUGIN_GIT_CREDENTIAL_BUILDKITE_OIDC"
+fi
 
 fail() {
   echo "git-credential-buildkite-oidc plugin: $*" >&2
