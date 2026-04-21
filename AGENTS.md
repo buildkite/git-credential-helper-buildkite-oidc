@@ -7,6 +7,10 @@
 - `mise run lint` runs `golangci-lint`.
 - `mise run vet` runs `go vet`.
 
+## Releasing
+
+- `GITHUB_TOKEN=$(gh auth token) mise exec -- goreleaser release --clean` cuts a release from the current tag.
+
 ## Notes
 
 - Prefer the `mise` tasks above instead of invoking individual tools directly when verifying changes.

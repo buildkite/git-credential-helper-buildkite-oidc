@@ -79,6 +79,15 @@ Successful responses must include:
 
 The helper uses `token` as the Git password and `expires_at` for caching. `username` defaults to `buildkite-agent` and is configured locally.
 
+## Releasing
+
+Tag a commit and run GoReleaser locally:
+
+```sh
+git tag vX.Y.Z
+GITHUB_TOKEN=$(gh auth token) mise exec -- goreleaser release --clean
+```
+
 ## Limitations
 
 - HTTPS remotes only
