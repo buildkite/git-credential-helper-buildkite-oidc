@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+script_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+source "$script_dir/../lib/shared.bash"
+
+authority=$(required_plugin_value "authority")
+validate_repo_authority "$authority"
+
+helper_binary=$(helper_path)
+helper_value=$(helper_command "$helper_binary")
+
+append_git_config "credential.https://${authority}.helper" "$helper_value"
+append_git_config "credential.https://${authority}.useHttpPath" "true"
+append_git_config "credential.https://${authority}.interactive" "false"
+
+export GIT_TERMINAL_PROMPT=0

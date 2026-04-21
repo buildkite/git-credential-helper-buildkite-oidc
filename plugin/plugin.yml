@@ -1,0 +1,40 @@
+name: git-credential-buildkite-oidc
+description: Configure checkout-time HTTPS Git credentials using Buildkite OIDC and a token-exchange endpoint.
+author: Buildkite
+requirements:
+  - bash
+configuration:
+  type: object
+  additionalProperties: false
+  properties:
+    exchange-url:
+      type: string
+      description: Absolute token-exchange endpoint URL.
+    audience:
+      type: string
+      description: Audience requested from the Buildkite OIDC API.
+    authority:
+      type: string
+      description: Exact allowed Git authority in host[:port] form.
+    version:
+      type: string
+      description: Pinned GitHub Release version for download mode.
+    binary-path:
+      type: string
+      description: Existing helper path for preinstalled mode.
+    download-dir:
+      type: string
+      description: Directory used for downloaded helper binaries.
+    username:
+      type: string
+      description: Basic-auth username returned to Git. Defaults to buildkite-agent.
+    cache-dir:
+      type: string
+      description: Base directory for the helper credential cache.
+    oidc-lifetime:
+      type: integer
+      description: Requested Buildkite OIDC lifetime in seconds.
+  required:
+    - exchange-url
+    - audience
+    - authority

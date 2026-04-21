@@ -1,0 +1,24 @@
+[tools]
+go = "1.26.1"
+goreleaser = "2"
+golangci-lint = "2"
+gotestsum = "latest"
+
+[env]
+MISE_GITHUB_TOKEN = "{% if env.MISE_GITHUB_TOKEN is defined %}{{ env.MISE_GITHUB_TOKEN }}{% else %}{{ exec(command='gh auth token 2>/dev/null || true') }}{% endif %}"
+
+[tasks.build]
+description = "Build the helper"
+run = "go build ./cmd/git-credential-buildkite-oidc"
+
+[tasks.test]
+description = "Run tests"
+run = "gotestsum --format testdox ./..."
+
+[tasks.lint]
+description = "Run golangci-lint"
+run = "golangci-lint run ./..."
+
+[tasks.vet]
+description = "Run go vet"
+run = "go vet ./..."

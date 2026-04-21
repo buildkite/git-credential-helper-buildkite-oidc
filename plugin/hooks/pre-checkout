@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+script_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+source "$script_dir/../lib/shared.bash"
+
+authority=$(required_plugin_value "authority")
+validate_repo_authority "$authority"
+
+helper_binary=$(helper_path)
+
+if [[ -n "$(plugin_value "binary-path")" ]]; then
+  [[ -x "$helper_binary" ]] || fail "helper binary not found or not executable at $helper_binary"
+  exit 0
+fi
+
+if [[ -x "$helper_binary" ]]; then
+  exit 0
+fi
+
+install_dir=$(dirname "$helper_binary")
+mkdir -p "$install_dir"
+
+tmpdir=$(mktemp -d)
+trap 'rm -rf "$tmpdir"' EXIT
+
+archive=$(archive_name)
+checksums=$(checksum_name)
+base_url=$(release_base_url)
+archive_path="$tmpdir/$archive"
+checksums_path="$tmpdir/$checksums"
+
+curl -fsSL --retry 3 --retry-delay 1 "$base_url/$archive" -o "$archive_path"
+curl -fsSL --retry 3 --retry-delay 1 "$base_url/$checksums" -o "$checksums_path"
+
+expected_checksum=$(awk -v name="$archive" '$2 == name { print $1 }' "$checksums_path")
+[[ -n "$expected_checksum" ]] || fail "checksum for $archive not found in $checksums"
+
+actual_checksum=$(sha256_file "$archive_path")
+[[ "$actual_checksum" == "$expected_checksum" ]] || fail "checksum verification failed for $archive"
+
+tar -xzf "$archive_path" -C "$tmpdir"
+extracted_binary="$tmpdir/git-credential-buildkite-oidc"
+[[ -f "$extracted_binary" ]] || fail "release archive did not contain git-credential-buildkite-oidc"
+
+temp_binary="$install_dir/.git-credential-buildkite-oidc.tmp"
+cp "$extracted_binary" "$temp_binary"
+chmod 0755 "$temp_binary"
+mv "$temp_binary" "$helper_binary"
