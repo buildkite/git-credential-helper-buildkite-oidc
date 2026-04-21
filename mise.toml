@@ -3,6 +3,7 @@ go = "1.26.1"
 goreleaser = "2"
 golangci-lint = "2"
 gotestsum = "latest"
+bats = "latest"
 
 [env]
 MISE_GITHUB_TOKEN = "{% if env.MISE_GITHUB_TOKEN is defined %}{{ env.MISE_GITHUB_TOKEN }}{% else %}{{ exec(command='gh auth token 2>/dev/null || true') }}{% endif %}"
@@ -13,7 +14,7 @@ run = "go build ./cmd/git-credential-buildkite-oidc"
 
 [tasks.test]
 description = "Run tests"
-run = "gotestsum --format testdox ./..."
+run = "gotestsum --format testdox ./... && bats plugin/tests"
 
 [tasks.lint]
 description = "Run golangci-lint"
