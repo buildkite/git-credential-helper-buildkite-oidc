@@ -197,10 +197,14 @@ release_base_url() {
   printf 'https://github.com/buildkite/git-credential-helper-buildkite-oidc/releases/download/%s' "$version"
 }
 
-archive_name() {
+archive_version() {
   local version
   version=$(required_plugin_value "version")
-  printf 'git-credential-buildkite-oidc_%s_%s_%s.tar.gz' "$version" "$(platform_os)" "$(platform_arch)"
+  printf '%s' "${version#v}"
+}
+
+archive_name() {
+  printf 'git-credential-buildkite-oidc_%s_%s_%s.tar.gz' "$(archive_version)" "$(platform_os)" "$(platform_arch)"
 }
 
 checksum_name() {

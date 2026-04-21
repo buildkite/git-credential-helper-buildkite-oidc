@@ -25,7 +25,7 @@ teardown() {
 @test "pre-checkout downloads and installs the helper release artifact" {
   export BUILDKITE_PLUGIN_GIT_CREDENTIAL_BUILDKITE_OIDC_VERSION="v0.0.1"
   export BUILDKITE_PLUGIN_GIT_CREDENTIAL_BUILDKITE_OIDC_DOWNLOAD_DIR="${TEST_TMPDIR}/downloads"
-  export MOCK_ARCHIVE_NAME="git-credential-buildkite-oidc_v0.0.1_$(bash -c 'source "$REPO_ROOT/plugin/lib/shared.bash" && platform_os')_$(bash -c 'source "$REPO_ROOT/plugin/lib/shared.bash" && platform_arch').tar.gz"
+  export MOCK_ARCHIVE_NAME="git-credential-buildkite-oidc_0.0.1_$(bash -c 'source "$REPO_ROOT/plugin/lib/shared.bash" && platform_os')_$(bash -c 'source "$REPO_ROOT/plugin/lib/shared.bash" && platform_arch').tar.gz"
   setup_download_mocks
 
   helper_binary=$(plugin_helper_path)

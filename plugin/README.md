@@ -2,7 +2,7 @@
 
 This plugin configures `git-credential-buildkite-oidc` before checkout so Git can fetch an HTTPS repository with short-lived credentials derived from Buildkite OIDC.
 
-The plugin uses three non-vendored hooks:
+It uses three non-vendored hooks:
 
 - `environment` validates `BUILDKITE_REPO`, derives the deterministic helper path, and injects URL-scoped Git config with `GIT_CONFIG_COUNT`
 - `pre-checkout` validates or installs the helper binary before clone starts
@@ -12,37 +12,32 @@ The plugin uses three non-vendored hooks:
 
 - Buildkite Agent `v3.108.0+` when consuming this repository as a subdirectory plugin
 - HTTPS `BUILDKITE_REPO`
-- exact `authority` match against `BUILDKITE_REPO`
+- `authority` must match `BUILDKITE_REPO` case-insensitively
 - one configured authority per plugin instance
 
 ## Example
-
-`exchange-url` and `audience` are intentionally deployment-specific. Replace the example values with the endpoint and Buildkite OIDC audience used by your own token-exchange service.
 
 ```yaml
 steps:
   - command: git remote -v
     plugins:
-      - github.com/buildkite/git-credential-helper-buildkite-oidc/plugin#v0.0.1:
+      - github.com/buildkite/git-credential-helper-buildkite-oidc/plugin#vX.Y.Z:
           exchange-url: https://token-exchange.example.com/api/git-credentials/exchange
           audience: https://token-exchange.example.com
           authority: git.example.com
-          version: v0.0.1
+          version: vX.Y.Z
 ```
 
 ## Modes
 
-### Download Mode
+Download mode is the default. It requires a pinned release tag, downloads the matching release artifact, verifies `checksums.txt`, and installs the helper under `download-dir`.
 
-Download mode is the default. It requires a pinned `version`, downloads the matching GitHub Release artifact, verifies the checksum from `checksums.txt`, and installs the helper to a deterministic absolute path under `download-dir`.
-
-### Preinstalled Mode
-
-Set `binary-path` to an existing absolute or relative helper path when the binary is already baked into the agent image or host.
+Preinstalled mode uses `binary-path` instead.
 
 ## Notes
 
 - SSH remotes are unsupported and fail fast.
 - The plugin does not override checkout in v1.
-- `cache-dir` controls credential cache storage. `download-dir` controls release artifact storage.
+- `cache-dir` controls credential cache storage.
+- `download-dir` controls where downloaded release artifacts are installed.
 - Split checkout and command environments are a documented limitation for v1.
