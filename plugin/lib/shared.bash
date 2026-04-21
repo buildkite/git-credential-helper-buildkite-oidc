@@ -10,7 +10,7 @@ fail() {
 plugin_value() {
   local key
   key=${1//-/_}
-  key=${key^^}
+  key=$(printf '%s' "$key" | tr '[:lower:]' '[:upper:]')
 
   local env_name="${BK_PLUGIN_PREFIX}_${key}"
   printf '%s' "${!env_name:-}"
@@ -33,6 +33,10 @@ plugin_username() {
   printf 'buildkite-agent'
 }
 
+normalize_authority() {
+  printf '%s' "$1" | tr '[:upper:]' '[:lower:]'
+}
+
 resolve_absolute_path() {
   local path=$1
   if [[ "$path" = /* ]]; then
@@ -45,6 +49,30 @@ resolve_absolute_path() {
 default_download_dir() {
   local base=${HOME:-${TMPDIR:-/tmp}}
   printf '%s/.cache/git-credential-buildkite-oidc/downloads' "$base"
+}
+
+default_cache_dir() {
+  local base=${TMPDIR:-/tmp}
+  base=${base%/}
+  printf '%s/git-credential-buildkite-oidc' "$base"
+}
+
+cache_base_dir() {
+  local cache_dir
+  cache_dir=$(plugin_value "cache-dir")
+  if [[ -n "$cache_dir" ]]; then
+    resolve_absolute_path "$cache_dir"
+    return
+  fi
+
+  default_cache_dir
+}
+
+cache_job_dir() {
+  local job_id=${BUILDKITE_JOB_ID:-}
+  [[ -n "$job_id" ]] || return 1
+
+  printf '%s/%s' "$(cache_base_dir)" "$job_id"
 }
 
 platform_os() {
@@ -109,7 +137,7 @@ helper_command() {
 
   cache_dir=$(plugin_value "cache-dir")
   if [[ -n "$cache_dir" ]]; then
-    args+=("--cache-dir=$(resolve_absolute_path "$cache_dir")")
+    args+=("--cache-dir=$(cache_base_dir)")
   fi
 
   oidc_lifetime=$(plugin_value "oidc-lifetime")
@@ -158,7 +186,7 @@ validate_repo_authority() {
     fail "BUILDKITE_REPO must be an HTTPS URL for checkout-time token exchange auth"
   fi
 
-  if [[ "$repo_authority" != "$configured_authority" ]]; then
+  if [[ "$(normalize_authority "$repo_authority")" != "$(normalize_authority "$configured_authority")" ]]; then
     fail "configured authority '$configured_authority' does not match BUILDKITE_REPO authority '$repo_authority'"
   fi
 }

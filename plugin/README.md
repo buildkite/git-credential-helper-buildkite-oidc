@@ -2,10 +2,11 @@
 
 This plugin configures `git-credential-buildkite-oidc` before checkout so Git can fetch an HTTPS repository with short-lived credentials derived from Buildkite OIDC.
 
-The plugin uses two non-vendored hooks:
+The plugin uses three non-vendored hooks:
 
 - `environment` validates `BUILDKITE_REPO`, derives the deterministic helper path, and injects URL-scoped Git config with `GIT_CONFIG_COUNT`
 - `pre-checkout` validates or installs the helper binary before clone starts
+- `pre-exit` removes the per-job helper cache directory as best-effort cleanup
 
 ## Requirements
 

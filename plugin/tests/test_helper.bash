@@ -5,6 +5,7 @@ setup_plugin_test_env() {
   REPO_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
 
   export BUILDKITE_REPO="https://git.example.com/acme/widgets.git"
+  export BUILDKITE_JOB_ID="job-123"
   export BUILDKITE_PLUGIN_GIT_CREDENTIAL_BUILDKITE_OIDC_EXCHANGE_URL="https://token-exchange.example.com/api/git-credentials/exchange"
   export BUILDKITE_PLUGIN_GIT_CREDENTIAL_BUILDKITE_OIDC_AUDIENCE="https://token-exchange.example.com"
   export BUILDKITE_PLUGIN_GIT_CREDENTIAL_BUILDKITE_OIDC_AUTHORITY="git.example.com"

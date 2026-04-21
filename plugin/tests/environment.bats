@@ -48,3 +48,12 @@ teardown() {
   [ "$status" -ne 0 ]
   [[ "$output" == *"BUILDKITE_REPO must be an HTTPS URL"* ]]
 }
+
+@test "environment matches authority case-insensitively" {
+  export BUILDKITE_REPO="https://Git.EXAMPLE.com/acme/widgets.git"
+
+  run bash -c '. "$REPO_ROOT/plugin/hooks/environment" >/dev/null; env | sort'
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"GIT_CONFIG_KEY_0=credential.https://git.example.com.helper"* ]]
+}

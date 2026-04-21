@@ -18,8 +18,9 @@ type Entry struct {
 }
 
 type Cache struct {
-	dir  string
-	skew time.Duration
+	dir   string
+	jobID string
+	skew  time.Duration
 }
 
 func DefaultBaseDir() string {
@@ -40,7 +41,7 @@ func New(baseDir, jobID string, skew time.Duration) (*Cache, error) {
 	if err := os.Chmod(dir, 0o700); err != nil {
 		return nil, fmt.Errorf("set cache directory permissions: %w", err)
 	}
-	return &Cache{dir: dir, skew: skew}, nil
+	return &Cache{dir: dir, jobID: jobID, skew: skew}, nil
 }
 
 func (c *Cache) Get(key string, now time.Time) (Entry, bool, error) {
@@ -56,7 +57,7 @@ func (c *Cache) Get(key string, now time.Time) (Entry, bool, error) {
 		if err := json.Unmarshal(payload, &entry); err != nil {
 			return fmt.Errorf("decode cache file: %w", err)
 		}
-		if c.expired(entry, now) {
+		if c.invalid(entry, now) {
 			if err := os.Remove(c.entryPath(key)); err != nil && !errors.Is(err, os.ErrNotExist) {
 				return fmt.Errorf("remove expired cache file: %w", err)
 			}
@@ -76,6 +77,9 @@ func (c *Cache) Get(key string, now time.Time) (Entry, bool, error) {
 func (c *Cache) Put(key string, entry Entry) error {
 	if entry.JobID == "" {
 		return errors.New("cache entry missing job ID")
+	}
+	if entry.JobID != c.jobID {
+		return errors.New("cache entry job ID does not match cache job ID")
 	}
 	if entry.Password == "" {
 		return errors.New("cache entry missing password")
@@ -126,37 +130,6 @@ func (c *Cache) Erase(key string) error {
 	})
 }
 
-func (c *Cache) CleanupExpired(now time.Time) error {
-	entries, err := os.ReadDir(c.dir)
-	if errors.Is(err, os.ErrNotExist) {
-		return nil
-	}
-	if err != nil {
-		return fmt.Errorf("read cache directory: %w", err)
-	}
-
-	for _, entry := range entries {
-		if entry.IsDir() || filepath.Ext(entry.Name()) != ".json" {
-			continue
-		}
-		path := filepath.Join(c.dir, entry.Name())
-		payload, err := os.ReadFile(path)
-		if err != nil {
-			continue
-		}
-		var record Entry
-		if err := json.Unmarshal(payload, &record); err != nil {
-			continue
-		}
-		if !c.expired(record, now) {
-			continue
-		}
-		_ = os.Remove(path)
-	}
-
-	return nil
-}
-
 func (c *Cache) entryPath(key string) string {
 	return filepath.Join(c.dir, key+".json")
 }
@@ -165,9 +138,9 @@ func (c *Cache) lockPath(key string) string {
 	return filepath.Join(c.dir, key+".lock")
 }
 
-func (c *Cache) expired(entry Entry, now time.Time) bool {
+func (c *Cache) invalid(entry Entry, now time.Time) bool {
 	expiresAt := time.Unix(entry.PasswordExpiryUTC, 0).Add(-c.skew)
-	return entry.JobID == "" || now.After(expiresAt)
+	return entry.JobID != c.jobID || now.After(expiresAt)
 }
 
 func (c *Cache) withLock(key string, fn func() error) error {

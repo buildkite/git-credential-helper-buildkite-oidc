@@ -13,11 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/buildkite/git-credential-helper-buildkite-oidc/internal/buildkiteoidc"
 	"github.com/buildkite/git-credential-helper-buildkite-oidc/internal/cache"
-	"github.com/buildkite/git-credential-helper-buildkite-oidc/internal/exchange"
-	"github.com/buildkite/git-credential-helper-buildkite-oidc/internal/gitcred"
-	"github.com/buildkite/git-credential-helper-buildkite-oidc/internal/repoid"
 )
 
 const cacheRefreshSkew = 45 * time.Second
@@ -121,7 +117,7 @@ func parseArgs(args []string, stderr io.Writer) (config, string, error) {
 }
 
 func runGet(cfg config, stdin io.Reader, stdout, stderr io.Writer) int {
-	request, err := gitcred.ParseRequest(stdin)
+	request, err := parseCredentialRequest(stdin)
 	if err != nil {
 		writeStderr(stderr, "parse git credential request: %v\n", err)
 		return 1
@@ -138,41 +134,27 @@ func runGet(cfg config, stdin io.Reader, stdout, stderr io.Writer) int {
 		return 1
 	}
 
-	now := time.Now()
-	_ = credentialCache.CleanupExpired(now)
-
-	entry, ok, err := credentialCache.Get(cacheKey, now)
+	entry, ok, err := credentialCache.Get(cacheKey, time.Now())
 	if err != nil {
 		writeStderr(stderr, "read credential cache: %v\n", err)
 		return 1
 	}
 	if ok {
-		return writeGitResponse(stdout, gitcred.Response{
+		return writeGitResponse(stdout, credentialResponse{
 			Username:          entry.Username,
 			Password:          entry.Password,
 			PasswordExpiryUTC: entry.PasswordExpiryUTC,
 		}, stderr)
 	}
 
-	oidcClient, err := buildkiteoidc.NewFromEnv(nil)
-	if err != nil {
-		writeStderr(stderr, "configure Buildkite OIDC client: %v\n", err)
-		return 1
-	}
-
-	token, err := oidcClient.RequestToken(context.Background(), cfg.audience, cfg.oidcLifetime)
+	oidcConfig := oidcClientConfigFromEnv()
+	token, err := requestOIDCToken(context.Background(), nil, oidcConfig, cfg.audience, cfg.oidcLifetime)
 	if err != nil {
 		writeStderr(stderr, "request Buildkite OIDC token: %v\n", err)
 		return 1
 	}
 
-	exchangeClient, err := exchange.New(cfg.exchangeURL, nil)
-	if err != nil {
-		writeStderr(stderr, "configure token exchange client: %v\n", err)
-		return 1
-	}
-
-	exchanged, err := exchangeClient.Exchange(context.Background(), token, exchange.Request{
+	exchanged, err := exchangeGitCredential(context.Background(), nil, cfg.exchangeURL, token, exchangeRequest{
 		Protocol:  request.Protocol,
 		Authority: request.Authority,
 		Path:      request.Path,
@@ -193,7 +175,7 @@ func runGet(cfg config, stdin io.Reader, stdout, stderr io.Writer) int {
 		return 1
 	}
 
-	return writeGitResponse(stdout, gitcred.Response{
+	return writeGitResponse(stdout, credentialResponse{
 		Username:          cfg.username,
 		Password:          exchanged.Password,
 		PasswordExpiryUTC: exchanged.PasswordExpiryUTC,
@@ -201,7 +183,7 @@ func runGet(cfg config, stdin io.Reader, stdout, stderr io.Writer) int {
 }
 
 func runErase(cfg config, stdin io.Reader, stderr io.Writer) int {
-	request, err := gitcred.ParseRequest(stdin)
+	request, err := parseCredentialRequest(stdin)
 	if err != nil {
 		writeStderr(stderr, "parse git credential request: %v\n", err)
 		return 1
@@ -225,7 +207,7 @@ func runErase(cfg config, stdin io.Reader, stderr io.Writer) int {
 	return 0
 }
 
-func prepareCache(cfg config, request gitcred.Request, jobID string) (*cache.Cache, string, error) {
+func prepareCache(cfg config, request credentialRequest, jobID string) (*cache.Cache, string, error) {
 	if strings.TrimSpace(jobID) == "" {
 		return nil, "", errors.New("BUILDKITE_JOB_ID is required")
 	}
@@ -233,11 +215,11 @@ func prepareCache(cfg config, request gitcred.Request, jobID string) (*cache.Cac
 	if err != nil {
 		return nil, "", fmt.Errorf("create credential cache: %w", err)
 	}
-	cachePath := repoid.NormalizeForCache(request.Path)
+	cachePath := normalizePathForCache(request.Path)
 	return credentialCache, credentialCacheKey(request.Protocol, request.Authority, cachePath, cfg.audience), nil
 }
 
-func validateRequest(request gitcred.Request, allowedAuthority string) error {
+func validateRequest(request credentialRequest, allowedAuthority string) error {
 	if !strings.EqualFold(request.Protocol, "https") {
 		return fmt.Errorf("unsupported git credential protocol %q: HTTPS is required", request.Protocol)
 	}
@@ -247,7 +229,7 @@ func validateRequest(request gitcred.Request, allowedAuthority string) error {
 	if !strings.EqualFold(request.Authority, allowedAuthority) {
 		return fmt.Errorf("git credential authority %q does not match configured authority %q", request.Authority, allowedAuthority)
 	}
-	if repoid.NormalizeForCache(request.Path) == "" {
+	if normalizePathForCache(request.Path) == "" {
 		return errors.New("git credential request missing path")
 	}
 	return nil
@@ -263,7 +245,7 @@ func credentialCacheKey(protocol, authority, path, audience string) string {
 	return hex.EncodeToString(sum[:])
 }
 
-func writeGitResponse(stdout io.Writer, response gitcred.Response, stderr io.Writer) int {
+func writeGitResponse(stdout io.Writer, response credentialResponse, stderr io.Writer) int {
 	if err := response.Write(stdout); err != nil {
 		writeStderr(stderr, "write git credential response: %v\n", err)
 		return 1

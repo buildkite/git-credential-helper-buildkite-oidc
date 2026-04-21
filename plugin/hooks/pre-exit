@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+script_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+source "$script_dir/../lib/shared.bash"
+
+job_cache_dir=$(cache_job_dir || true)
+if [[ -z "$job_cache_dir" || ! -e "$job_cache_dir" ]]; then
+  exit 0
+fi
+
+if ! rm -rf "$job_cache_dir"; then
+  echo "git-credential-buildkite-oidc plugin: failed to remove job cache directory $job_cache_dir" >&2
+fi
+
+exit 0
