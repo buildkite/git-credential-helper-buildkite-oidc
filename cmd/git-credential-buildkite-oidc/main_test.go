@@ -43,7 +43,7 @@ func TestRunGetUsesExchangeAndCache(t *testing.T) {
 			t.Fatalf("unexpected exchange body: %s", body)
 		}
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = io.WriteString(w, `{"token":"git-password","expires_in":270,"expires_at":1893456000,"token_type":"bearer","allowed_repos":["acme/widgets"]}`)
+		_, _ = io.WriteString(w, `{"token":"git-password","valid_since":1893455730,"expires_at":1893456000,"token_type":"bearer"}`)
 	}))
 	t.Cleanup(exchangeServer.Close)
 

@@ -46,11 +46,10 @@ type exchangeResponse struct {
 }
 
 type tokenExchangeResponse struct {
-	Token        string   `json:"token"`
-	ExpiresIn    int64    `json:"expires_in"`
-	ExpiresAt    int64    `json:"expires_at"`
-	TokenType    string   `json:"token_type"`
-	AllowedRepos []string `json:"allowed_repos"`
+	Token      string `json:"token"`
+	ValidSince int64  `json:"valid_since"`
+	ExpiresAt  int64  `json:"expires_at"`
+	TokenType  string `json:"token_type"`
 }
 
 func oidcClientConfigFromEnv() oidcClientConfig {
@@ -166,27 +165,8 @@ func decodeExchangeResponse(response *http.Response, requestPayload exchangeRequ
 	if payload.ExpiresAt == 0 {
 		return exchangeResponse{}, false, errors.New("token exchange response missing expires_at")
 	}
-	if !allowedRepoMatches(payload.AllowedRepos, requestPayload.Path) {
-		return exchangeResponse{}, false, fmt.Errorf("token exchange response does not allow repo %q", normalizePathForAuthorization(requestPayload.Path))
-	}
 
 	return exchangeResponse{Password: payload.Token, PasswordExpiryUTC: payload.ExpiresAt}, false, nil
-}
-
-func allowedRepoMatches(allowedRepos []string, requestedPath string) bool {
-	if len(allowedRepos) == 0 {
-		return false
-	}
-	requestedRepo := normalizePathForAuthorization(requestedPath)
-	if requestedRepo == "" {
-		return false
-	}
-	for _, allowedRepo := range allowedRepos {
-		if normalizePathForAuthorization(allowedRepo) == requestedRepo {
-			return true
-		}
-	}
-	return false
 }
 
 func doJSONPostWithRetry[T any](ctx context.Context, httpClient *http.Client, requestURL string, body []byte, headers map[string]string, decode func(*http.Response) (T, bool, error)) (T, error) {

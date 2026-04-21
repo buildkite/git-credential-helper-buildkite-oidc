@@ -47,23 +47,3 @@ func TestNormalizePathForCache(t *testing.T) {
 		})
 	}
 }
-
-func TestNormalizePathForAuthorization(t *testing.T) {
-	testCases := []struct {
-		name     string
-		input    string
-		expected string
-	}{
-		{name: "trim git suffix", input: "/acme/widgets.git", expected: "acme/widgets"},
-		{name: "lfs path", input: "/acme/widgets.git/info/lfs", expected: "acme/widgets"},
-		{name: "plain path", input: "acme/widgets", expected: "acme/widgets"},
-	}
-
-	for _, testCase := range testCases {
-		t.Run(testCase.name, func(t *testing.T) {
-			if actual := normalizePathForAuthorization(testCase.input); actual != testCase.expected {
-				t.Fatalf("normalizePathForAuthorization(%q) = %q, want %q", testCase.input, actual, testCase.expected)
-			}
-		})
-	}
-}
