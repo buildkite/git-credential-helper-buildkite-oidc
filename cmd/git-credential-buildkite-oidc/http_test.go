@@ -79,11 +79,11 @@ func TestExchangeGitCredential(t *testing.T) {
 		if err != nil {
 			t.Fatalf("read body: %v", err)
 		}
-		if !strings.Contains(string(body), `"authority":"git.example.com"`) {
+		if len(body) != 0 {
 			t.Fatalf("unexpected body: %s", body)
 		}
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = io.WriteString(w, `{"password":"git-password","password_expiry_utc":1893456000}`)
+		_, _ = io.WriteString(w, `{"token":"git-password","expires_in":270,"expires_at":1893456000,"token_type":"bearer","allowed_repos":["acme/widgets"]}`)
 	}))
 	t.Cleanup(server.Close)
 
@@ -106,7 +106,7 @@ func TestExchangeGitCredential(t *testing.T) {
 func TestExchangeGitCredentialRejectsMissingExpiry(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = io.WriteString(w, `{"password":"git-password"}`)
+		_, _ = io.WriteString(w, `{"token":"git-password","allowed_repos":["acme/widgets"]}`)
 	}))
 	t.Cleanup(server.Close)
 
@@ -115,7 +115,24 @@ func TestExchangeGitCredentialRejectsMissingExpiry(t *testing.T) {
 		Authority: "git.example.com",
 		Path:      "acme/widgets.git",
 	})
-	if err == nil || !strings.Contains(err.Error(), "password_expiry_utc") {
+	if err == nil || !strings.Contains(err.Error(), "expires_at") {
 		t.Fatalf("expected missing expiry error, got %v", err)
+	}
+}
+
+func TestExchangeGitCredentialRejectsRepoOutsideAllowlist(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = io.WriteString(w, `{"token":"git-password","expires_at":1893456000,"token_type":"bearer","allowed_repos":["acme/other-repo"]}`)
+	}))
+	t.Cleanup(server.Close)
+
+	_, err := exchangeGitCredential(t.Context(), server.Client(), server.URL, "oidc-token", exchangeRequest{
+		Protocol:  "https",
+		Authority: "git.example.com",
+		Path:      "acme/widgets.git",
+	})
+	if err == nil || !strings.Contains(err.Error(), `does not allow repo "acme/widgets"`) {
+		t.Fatalf("expected repo allowlist error, got %v", err)
 	}
 }

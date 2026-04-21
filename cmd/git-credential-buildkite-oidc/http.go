@@ -45,6 +45,14 @@ type exchangeResponse struct {
 	PasswordExpiryUTC int64  `json:"password_expiry_utc"`
 }
 
+type tokenExchangeResponse struct {
+	Token        string   `json:"token"`
+	ExpiresIn    int64    `json:"expires_in"`
+	ExpiresAt    int64    `json:"expires_at"`
+	TokenType    string   `json:"token_type"`
+	AllowedRepos []string `json:"allowed_repos"`
+}
+
 func oidcClientConfigFromEnv() oidcClientConfig {
 	endpoint := os.Getenv("BUILDKITE_AGENT_ENDPOINT")
 	if endpoint == "" {
@@ -102,15 +110,11 @@ func exchangeGitCredential(ctx context.Context, httpClient *http.Client, exchang
 		return exchangeResponse{}, errors.New("invalid exchange request")
 	}
 
-	body, err := json.Marshal(requestPayload)
-	if err != nil {
-		return exchangeResponse{}, fmt.Errorf("marshal exchange request: %w", err)
-	}
-
-	return doJSONPostWithRetry(ctx, httpClient, exchangeURL, body, map[string]string{
+	return doJSONPostWithRetry(ctx, httpClient, exchangeURL, nil, map[string]string{
 		"Authorization": "Bearer " + oidcToken,
-		"Content-Type":  "application/json",
-	}, decodeExchangeResponse)
+	}, func(response *http.Response) (exchangeResponse, bool, error) {
+		return decodeExchangeResponse(response, requestPayload)
+	})
 }
 
 func decodeOIDCTokenResponse(response *http.Response) (string, bool, error) {
@@ -138,7 +142,7 @@ func decodeOIDCTokenResponse(response *http.Response) (string, bool, error) {
 	return payload.Token, false, nil
 }
 
-func decodeExchangeResponse(response *http.Response) (exchangeResponse, bool, error) {
+func decodeExchangeResponse(response *http.Response, requestPayload exchangeRequest) (exchangeResponse, bool, error) {
 	defer func() {
 		_ = response.Body.Close()
 	}()
@@ -152,18 +156,37 @@ func decodeExchangeResponse(response *http.Response) (exchangeResponse, bool, er
 		return exchangeResponse{}, retryableStatus(response.StatusCode), err
 	}
 
-	var payload exchangeResponse
+	var payload tokenExchangeResponse
 	if err := json.NewDecoder(response.Body).Decode(&payload); err != nil {
 		return exchangeResponse{}, false, fmt.Errorf("decode token exchange response: %w", err)
 	}
-	if payload.Password == "" {
-		return exchangeResponse{}, false, errors.New("token exchange response missing password")
+	if payload.Token == "" {
+		return exchangeResponse{}, false, errors.New("token exchange response missing token")
 	}
-	if payload.PasswordExpiryUTC == 0 {
-		return exchangeResponse{}, false, errors.New("token exchange response missing password_expiry_utc")
+	if payload.ExpiresAt == 0 {
+		return exchangeResponse{}, false, errors.New("token exchange response missing expires_at")
+	}
+	if !allowedRepoMatches(payload.AllowedRepos, requestPayload.Path) {
+		return exchangeResponse{}, false, fmt.Errorf("token exchange response does not allow repo %q", normalizePathForAuthorization(requestPayload.Path))
 	}
 
-	return payload, false, nil
+	return exchangeResponse{Password: payload.Token, PasswordExpiryUTC: payload.ExpiresAt}, false, nil
+}
+
+func allowedRepoMatches(allowedRepos []string, requestedPath string) bool {
+	if len(allowedRepos) == 0 {
+		return false
+	}
+	requestedRepo := normalizePathForAuthorization(requestedPath)
+	if requestedRepo == "" {
+		return false
+	}
+	for _, allowedRepo := range allowedRepos {
+		if normalizePathForAuthorization(allowedRepo) == requestedRepo {
+			return true
+		}
+	}
+	return false
 }
 
 func doJSONPostWithRetry[T any](ctx context.Context, httpClient *http.Client, requestURL string, body []byte, headers map[string]string, decode func(*http.Response) (T, bool, error)) (T, error) {

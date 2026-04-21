@@ -35,8 +35,15 @@ func TestRunGetUsesExchangeAndCache(t *testing.T) {
 		if got := r.Header.Get("Authorization"); got != "Bearer oidc-token" {
 			t.Fatalf("unexpected exchange auth header: %s", got)
 		}
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			t.Fatalf("read exchange body: %v", err)
+		}
+		if len(body) != 0 {
+			t.Fatalf("unexpected exchange body: %s", body)
+		}
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = io.WriteString(w, `{"password":"git-password","password_expiry_utc":1893456000}`)
+		_, _ = io.WriteString(w, `{"token":"git-password","expires_in":270,"expires_at":1893456000,"token_type":"bearer","allowed_repos":["acme/widgets"]}`)
 	}))
 	t.Cleanup(exchangeServer.Close)
 

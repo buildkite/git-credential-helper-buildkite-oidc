@@ -22,8 +22,8 @@ steps:
   - command: git remote -v
     plugins:
       - github.com/buildkite/git-credential-helper-buildkite-oidc/plugin#vX.Y.Z:
-          exchange-url: https://token-exchange.example.com/api/git-credentials/exchange
-          audience: https://token-exchange.example.com
+          exchange-url: https://git.example.com/api/v0/auth/buildkite/exchange
+          audience: https://git.example.com
           authority: git.example.com
           version: vX.Y.Z
 ```

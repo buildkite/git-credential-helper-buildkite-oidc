@@ -73,3 +73,9 @@ func normalizePathForCache(path string) string {
 	}
 	return normalized
 }
+
+func normalizePathForAuthorization(path string) string {
+	normalized := normalizePathForCache(path)
+	normalized = strings.TrimSuffix(normalized, ".git")
+	return strings.Trim(normalized, "/")
+}
