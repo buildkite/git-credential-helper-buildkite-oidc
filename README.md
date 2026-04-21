@@ -46,11 +46,11 @@ The plugin lives in [`plugin/`](plugin/) and can be used as a subdirectory plugi
 steps:
   - command: git remote -v
     plugins:
-      - github.com/buildkite/git-credential-helper-buildkite-oidc/plugin#vX.Y.Z:
+      - github.com/buildkite/git-credential-helper-buildkite-oidc/plugin#v0.0.2:
           exchange-url: https://git.example.com/api/v0/auth/buildkite/exchange
           audience: https://git.example.com
           authority: git.example.com
-          version: vX.Y.Z
+          version: v0.0.2
 ```
 
 The plugin:
@@ -71,16 +71,13 @@ Successful responses must include:
 ```json
 {
   "token": "<short-lived-token>",
-  "expires_in": 270,
+  "valid_since": 1776740400,
   "expires_at": 1776740670,
-  "token_type": "bearer",
-  "allowed_repos": [
-    "acme/widgets"
-  ]
+  "token_type": "bearer"
 }
 ```
 
-The helper uses `token` as the Git password, uses `expires_at` for caching, and requires the requested repo path to be present in `allowed_repos`. `username` defaults to `buildkite-agent` and is configured locally.
+The helper uses `token` as the Git password and `expires_at` for caching. `username` defaults to `buildkite-agent` and is configured locally.
 
 ## Limitations
 
