@@ -79,6 +79,18 @@ Successful responses must include:
 
 The helper uses `token` as the Git password and `expires_at` for caching. `username` defaults to `buildkite-agent` and is configured locally.
 
+## Development
+
+This project uses [mise](https://mise.jdx.dev) for toolchain management.
+
+```sh
+mise run build    # build the helper binary
+mise run test     # run Go tests and plugin Bats tests
+mise run lint     # run golangci-lint
+mise run vet      # run go vet
+mise run format   # auto-fix lint issues via golangci-lint --fix
+```
+
 ## Releasing
 
 Tag a commit and run GoReleaser locally:

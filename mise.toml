@@ -21,6 +21,10 @@ run = "gotestsum --format testdox ./... && bats plugin/tests"
 description = "Run golangci-lint"
 run = "golangci-lint run ./..."
 
+[tasks.format]
+description = "Auto-fix lint issues"
+run = "golangci-lint run --fix ./..."
+
 [tasks.vet]
 description = "Run go vet"
 run = "go vet ./..."
