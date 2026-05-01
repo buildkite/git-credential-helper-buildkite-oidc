@@ -37,6 +37,14 @@ plugin_username() {
   printf 'buildkite-agent'
 }
 
+apply_checkout_repo_override() {
+  local checkout_repo
+  checkout_repo=$(plugin_value "checkout-repo")
+  if [[ -n "$checkout_repo" ]]; then
+    export BUILDKITE_REPO="$checkout_repo"
+  fi
+}
+
 normalize_authority() {
   printf '%s' "$1" | tr '[:upper:]' '[:lower:]'
 }

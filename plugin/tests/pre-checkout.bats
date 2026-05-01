@@ -22,6 +22,20 @@ teardown() {
   [ "$status" -eq 0 ]
 }
 
+@test "pre-checkout applies checkout-repo before validating authority" {
+  helper_binary="${TEST_TMPDIR}/bin/git-credential-buildkite-oidc"
+  mkdir -p "$(dirname "$helper_binary")"
+  printf '#!/usr/bin/env bash\nexit 0\n' > "$helper_binary"
+  chmod +x "$helper_binary"
+  export BUILDKITE_REPO="https://github.com/acme/widgets.git"
+  export BUILDKITE_PLUGIN_GIT_CREDENTIAL_BUILDKITE_OIDC_BINARY_PATH="$helper_binary"
+  export BUILDKITE_PLUGIN_GIT_CREDENTIAL_BUILDKITE_OIDC_CHECKOUT_REPO="https://git.example.com/acme/widgets.git"
+
+  run bash "$REPO_ROOT/plugin/hooks/pre-checkout"
+
+  [ "$status" -eq 0 ]
+}
+
 @test "pre-checkout downloads and installs the helper release artifact" {
   export BUILDKITE_PLUGIN_GIT_CREDENTIAL_BUILDKITE_OIDC_VERSION="v0.0.1"
   export BUILDKITE_PLUGIN_GIT_CREDENTIAL_BUILDKITE_OIDC_DOWNLOAD_DIR="${TEST_TMPDIR}/downloads"

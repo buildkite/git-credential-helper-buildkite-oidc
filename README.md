@@ -55,10 +55,25 @@ steps:
 
 The plugin:
 
-- validates that `BUILDKITE_REPO` is an HTTPS URL for the configured authority
+- optionally exports `checkout-repo` as `BUILDKITE_REPO` before checkout
+- validates that the effective `BUILDKITE_REPO` is an HTTPS URL for the configured authority
 - injects URL-scoped Git config with `GIT_CONFIG_COUNT`
 - installs the helper before checkout
 - removes the per-job cache directory in `pre-exit`
+
+Set `checkout-repo` when a pipeline should keep its Buildkite source metadata but have the agent's default checkout clone from a different HTTPS repository:
+
+```yaml
+steps:
+  - command: git remote -v
+    plugins:
+      - github.com/buildkite/git-credential-helper-buildkite-oidc/plugin#v0.0.2:
+          checkout-repo: https://git.example.com/acme/widgets.git
+          exchange-url: https://git.example.com/api/v0/auth/buildkite/exchange
+          audience: https://git.example.com
+          authority: git.example.com
+          version: v0.0.2
+```
 
 Download mode is the default. It requires a pinned release tag and verifies the published checksum before installing the helper.
 
