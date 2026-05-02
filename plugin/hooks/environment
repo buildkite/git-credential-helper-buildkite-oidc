@@ -5,6 +5,7 @@ script_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 source "$script_dir/../lib/shared.bash"
 
 authority=$(required_plugin_value "authority")
+apply_checkout_repo_override
 validate_repo_authority "$authority"
 
 helper_binary=$(helper_path)

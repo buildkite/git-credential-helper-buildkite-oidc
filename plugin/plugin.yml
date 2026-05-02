@@ -16,6 +16,9 @@ configuration:
     authority:
       type: string
       description: Exact allowed Git authority in host[:port] form.
+    checkout-repo:
+      type: string
+      description: Optional HTTPS repository URL to export as BUILDKITE_REPO before checkout.
     version:
       type: string
       description: Pinned GitHub Release version for download mode.

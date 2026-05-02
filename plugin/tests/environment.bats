@@ -57,3 +57,14 @@ teardown() {
   [ "$status" -eq 0 ]
   [[ "$output" == *"GIT_CONFIG_KEY_0=credential.https://git.example.com.helper"* ]]
 }
+
+@test "environment applies checkout-repo before validating authority" {
+  export BUILDKITE_REPO="https://github.com/acme/widgets.git"
+  export BUILDKITE_PLUGIN_GIT_CREDENTIAL_BUILDKITE_OIDC_CHECKOUT_REPO="https://git.example.com/acme/widgets.git"
+
+  run bash -c '. "$REPO_ROOT/plugin/hooks/environment" >/dev/null; env | sort'
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"BUILDKITE_REPO=https://git.example.com/acme/widgets.git"* ]]
+  [[ "$output" == *"GIT_CONFIG_KEY_0=credential.https://git.example.com.helper"* ]]
+}
