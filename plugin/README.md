@@ -21,11 +21,11 @@ It uses three non-vendored hooks:
 steps:
   - command: git remote -v
     plugins:
-      - github.com/buildkite/git-credential-helper-buildkite-oidc/plugin#vX.Y.Z:
+      - github.com/buildkite/git-credential-helper-buildkite-oidc/plugin#v0.0.4:
           exchange-url: https://git.example.com/api/v0/auth/buildkite/exchange
           audience: https://git.example.com
           authority: git.example.com
-          version: vX.Y.Z
+          version: v0.0.4
 ```
 
 To override the repository URL used by Buildkite's default checkout, set `checkout-repo`:
@@ -34,12 +34,12 @@ To override the repository URL used by Buildkite's default checkout, set `checko
 steps:
   - command: git remote -v
     plugins:
-      - github.com/buildkite/git-credential-helper-buildkite-oidc/plugin#vX.Y.Z:
+      - github.com/buildkite/git-credential-helper-buildkite-oidc/plugin#v0.0.4:
           checkout-repo: https://git.example.com/acme/widgets.git
           exchange-url: https://git.example.com/api/v0/auth/buildkite/exchange
           audience: https://git.example.com
           authority: git.example.com
-          version: vX.Y.Z
+          version: v0.0.4
 ```
 
 ## Modes

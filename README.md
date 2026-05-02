@@ -46,11 +46,11 @@ The plugin lives in [`plugin/`](plugin/) and can be used as a subdirectory plugi
 steps:
   - command: git remote -v
     plugins:
-      - github.com/buildkite/git-credential-helper-buildkite-oidc/plugin#v0.0.2:
+      - github.com/buildkite/git-credential-helper-buildkite-oidc/plugin#v0.0.4:
           exchange-url: https://git.example.com/api/v0/auth/buildkite/exchange
           audience: https://git.example.com
           authority: git.example.com
-          version: v0.0.2
+          version: v0.0.4
 ```
 
 The plugin:
@@ -67,12 +67,12 @@ Set `checkout-repo` when a pipeline should keep its Buildkite source metadata bu
 steps:
   - command: git remote -v
     plugins:
-      - github.com/buildkite/git-credential-helper-buildkite-oidc/plugin#v0.0.2:
+      - github.com/buildkite/git-credential-helper-buildkite-oidc/plugin#v0.0.4:
           checkout-repo: https://git.example.com/acme/widgets.git
           exchange-url: https://git.example.com/api/v0/auth/buildkite/exchange
           audience: https://git.example.com
           authority: git.example.com
-          version: v0.0.2
+          version: v0.0.4
 ```
 
 Download mode is the default. It requires a pinned release tag and verifies the published checksum before installing the helper.
